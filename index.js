@@ -10,7 +10,7 @@ import "firebase/firestore";
 import * as firebaseui from 'firebaseui';
 
 // Document elements
-const startRsvpButton = document.getElementById('startRsvp');
+const startRsvpButton = document.getElementById('startRSVP');
 const guestbookContainer = document.getElementById('guestbook-container');
 
 const form = document.getElementById('leave-message');
@@ -24,9 +24,17 @@ var rsvpListener = null;
 var guestbookListener = null;
 
 // Add Firebase project configuration object here
-// var firebaseConfig = {};
+ const firebaseConfig = {
+  apiKey: "AIzaSyBeKvJiUQPP2PKxvqlWpii3GQhAXu5FsZw",
+  authDomain: "fir-web-codelab-5893e.firebaseapp.com",
+  databaseURL: "https://fir-web-codelab-5893e.firebaseio.com",
+  projectId: "fir-web-codelab-5893e",
+  storageBucket: "fir-web-codelab-5893e.appspot.com",
+  messagingSenderId: "731270507851",
+  appId: "1:731270507851:web:bdd071d84ae5da4418ccce"
+};
 
-// firebase.initializeApp(firebaseConfig);
+ firebase.initializeApp(firebaseConfig);
 
 // FirebaseUI config
 const uiConfig = {
@@ -44,4 +52,34 @@ const uiConfig = {
   }
 };
 
-// const ui = new firebaseui.auth.AuthUI(firebase.auth());
+ const ui = new firebaseui.auth.AuthUI(firebase.auth());
+
+startRsvpButton.addEventListener('click', () => {
+  if(firebase.auth().currentUser){
+    firebase.auth().signOut();
+  } else {
+    ui.start('#firebaseui-auth-container', uiConfig);
+  }
+});
+
+firebase.auth().onAuthStateChanged((user) => {
+  if(user){
+    startRsvpButton.textContent = 'Log out';
+    guestbookContainer.style.display = 'block';
+  } else {
+    startRsvpButton.textContent = 'RSVP';
+    guestbookContainer.style.display = 'none';
+  }
+});
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  firebase.firestore().collection('guestbook').add({
+    text: input.value,
+    timestamp: Date.now(),
+    name: firebase.auth().currentUser.displayName,
+    userId: firebase.auth().currentUser.uid
+  });
+  input.value = '';
+  return false;
+});
