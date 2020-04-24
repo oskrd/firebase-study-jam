@@ -67,10 +67,12 @@ firebase.auth().onAuthStateChanged((user) => {
     startRsvpButton.textContent = 'Log out';
     guestbookContainer.style.display = 'block';
     subscribeGuestbook();
+    subscribeCurrentRSVP(user);
   } else {
     startRsvpButton.textContent = 'RSVP';
     guestbookContainer.style.display = 'none';
     unsubscribeGuestbook();
+    unsubscribeCurrentRSVP();
   }
 });
 
@@ -106,3 +108,51 @@ function unsubscribeGuestbook(){
   }
 }
 
+rsvpYes.onclick = () => {
+  const userDoc = firebase.firestore()
+    .collection('attendees').doc(firebase.auth().currentUser.uid);
+  userDoc.set({
+    attending: true
+  }).catch(console.error);
+};
+
+rsvpNo.onclick = () => {
+  const userDoc = firebase.firestore()
+    .collection('attendees').doc(firebase.auth().currentUser.uid);
+  userDoc.set({
+    attending: false
+  }).catch(console.error);
+};
+
+firebase.firestore()
+  .collection('attendees').where('attending', '==', true)
+  .onSnapshot((snap) => {
+    const newAttendeeCount = snap.docs.length;
+    numberAttending.innerHTML = newAttendeeCount + ' people going';
+  });
+
+function subscribeCurrentRSVP(user) {
+  rsvpListener = firebase.firestore()
+    .collection('attendees').doc(user.uid)
+    .onSnapshot((doc) => {
+      if(doc && doc.data()) {
+        const attendingResponse = doc.data().attending;
+        if(attendingResponse) {
+          rsvpYes.className='clicked';
+          rsvpNo.className='';
+        } else {
+          rsvpYes.className='';
+          rsvpNo.className='clicked';
+        }
+      }
+    });
+}
+
+function unsubscribeCurrentRSVP() {
+  if(rsvpListener != null){
+    rsvpListener();
+    rsvpListener = null;
+  }
+  rsvpYes.className='';
+  rsvpNo.className='';
+}
